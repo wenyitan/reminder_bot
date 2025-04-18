@@ -17,6 +17,10 @@ class Database:
     def fetch_all(self, query, values=None):
         self.cursor.execute(query, values or ())
         return self.cursor.fetchall()
+    
+    def fetch_one(self, query, values=None):
+        self.cursor.execute(query, values or ())
+        return self.cursor.fetchone()
 
     def close(self):
         self.conn.close()
