@@ -19,3 +19,7 @@ class ReminderManager():
     def get_reminder_by_id(self, user_id):
         query = f"select * from {TABLE_NAME} where user_id=?"
         return self.db.fetch_one(query, (str(user_id),))
+    
+    def change_reminder_hour_for_user(self, user_id, hour):
+        query = f"update {TABLE_NAME} set hour=? where user_id=?"
+        self.db.execute(query, (hour, user_id))
