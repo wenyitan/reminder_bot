@@ -6,6 +6,13 @@ from reminder_manager import ReminderManager
 from telebot.util import quick_markup
 from datetime import datetime 
 import telebot.types as types
+import logging as logger
+
+logger.basicConfig(
+    filename='/app/bot/bot.log',
+    level=logger.INFO,
+    format='%(asctime)s [%(levelname)s] %(message)s'
+)
 
 bot = telebot.TeleBot(BOT_TOKEN)
 db = Database()
@@ -16,6 +23,7 @@ rm = ReminderManager(db)
 def start(message):
     from_user = message.from_user
     chat = message.chat
+    logger.info(f"/start called by user: {from_user.id}")
     all_reminders = rm.get_all_reminders()
     all_reminders_id = [int(reminder["user_id"]) for reminder in all_reminders]
     if from_user.id not in all_reminders_id:
@@ -33,19 +41,22 @@ def start(message):
 
 def handle_idle_choice(message):
     router = {
-        "At what time did I want to be reminded?": check_reminder_time,
-        "I want to change the time I am reminded.": change_reminder_time
+        "At what time did I want to be reminded?" : check_reminder_time,
+        "I want to change the time I am reminded." : change_reminder_time
     }
-    router[message.text](message)
+    if message.text.startswith("/"):
+        pass
+    else:
+        router[message.text](message)
 
 def check_reminder_time(message):
     reminder = rm.get_reminder_by_id(message.from_user.id)
     hour = str(reminder['hour'])
-    sent_message = bot.send_message(message.chat.id, text=f"You wanted to be reminded at {hour if len(hour) > 1 else '0'+hour}00 hrs!!")
+    markup = types.ReplyKeyboardRemove()
+    sent_message = bot.send_message(message.chat.id, text=f"You wanted to be reminded at {hour if len(hour) > 1 else '0'+hour}00 hrs!!\nDo you want it to be changed?", reply_markup=markup)
     pass
 
 def change_reminder_time(message):
-    print("Placeholder for change reminder time")
     pass
 
 @bot.callback_query_handler(func=lambda call: int(call.data) in range(24))
@@ -61,14 +72,14 @@ def log_reminder_input(callback):
     markup = quick_markup({})
     bot.edit_message_reply_markup(chat_id=to_edit_chat_id, message_id=to_edit_id, reply_markup=markup)
     text = f"OK you will be reminded daily at {callback.data if len(callback.data) > 1 else '0'+callback.data}00hrs!"
+    logger.info(f"User {from_user.id} added to database at hour {callback.data}")
     sent_message = bot.send_message(chat.id, text=text)
     bot.register_next_step_handler(sent_message, start)
 
 def remind():
     now = datetime.now().hour
-    print(f"Sending reminders now at {str(now) if len(str(now)) > 1 else '0'+str(now)}00hrs...")
-    all_users = rm.get_all_reminders()
-    to_remind = [user for user in all_users if user['hour'] == now]
+    logger.info(f"Sending reminders now at {str(now) if len(str(now)) > 1 else '0'+str(now)}00hrs...")
+    to_remind = rm.get_all_reminders_by_hour(now)
     for user in to_remind:
         bot.send_message(user["chat_id"], text="Reminder to do your quiet time!!")
         
@@ -76,4 +87,5 @@ if __name__ == "__main__":
     scheduler = BackgroundScheduler()
     scheduler.add_job(remind, "cron", hour="*")
     scheduler.start()
+    logger.info("Starting bot.")
     bot.infinity_polling()

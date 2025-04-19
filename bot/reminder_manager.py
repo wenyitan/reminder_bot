@@ -8,6 +8,10 @@ class ReminderManager():
         query = f"select * from {TABLE_NAME}"
         return self.db.fetch_all(query)
     
+    def get_all_reminders_by_hour(self, hour):
+        query = f"select * from {TABLE_NAME} where hour=?"
+        return self.db.fetch_all(query, (hour,))
+    
     def add_reminder(self, chat_id, user_id, hour):
         query = f"insert into {TABLE_NAME} (chat_id, user_id, hour) values (?, ?, ?)"
         self.db.execute(query, (chat_id, user_id, hour))
