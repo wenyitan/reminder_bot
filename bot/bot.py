@@ -20,7 +20,7 @@ def start(message):
     all_reminders_id = [int(reminder["user_id"]) for reminder in all_reminders]
     if from_user.id not in all_reminders_id:
         markup = quick_markup({
-            f"{i}:00hrs" if len(str(i)) > 1 else f"0{i}:00hrs": {"callback_data": str(i)} for i in range(24)
+            f"{i}:00hrs" if len(str(i)) > 1 else f"0{i}:00hrs": {"callback_data": f"log:{str(i)}"} for i in range(24)
         }, row_width=2)
         sent_message = bot.send_message(chat.id, text=f"Hello {from_user.first_name}! When would you like to be reminded?", reply_markup=markup)
     else:
@@ -48,19 +48,23 @@ def change_reminder_time(message):
     print("Placeholder for change reminder time")
     pass
 
-@bot.callback_query_handler(func=lambda call: int(call.data) in range(24))
+@bot.callback_query_handler(func=lambda call: call.data.split(":")[0] == "log")
 def log_reminder_input(callback):
     message = callback.message
     chat = message.chat
     from_user = callback.from_user
-    to_edit_id = message.id
-    to_edit_chat_id = message.chat.id
+    hour = callback.data.split(":")[1]
+
     user_id = from_user.id
     chat_id = chat.id
-    rm.add_reminder(chat_id=chat_id, user_id=user_id, hour=int(callback.data))
+    rm.add_reminder(chat_id=chat_id, user_id=user_id, hour=int(hour))
+
     markup = quick_markup({})
+    to_edit_id = message.id
+    to_edit_chat_id = message.chat.id
     bot.edit_message_reply_markup(chat_id=to_edit_chat_id, message_id=to_edit_id, reply_markup=markup)
-    text = f"OK you will be reminded daily at {callback.data if len(callback.data) > 1 else '0'+callback.data}00hrs!"
+
+    text = f"OK you will be reminded daily at {hour if len(hour) > 1 else '0'+hour}00hrs!"
     sent_message = bot.send_message(chat.id, text=text)
     bot.register_next_step_handler(sent_message, start)
 
