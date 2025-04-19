@@ -1,0 +1,12 @@
+services:
+  telegram-bot:
+    build: .
+    volumes:
+      - ./bot:/app/bot
+      - ./bot/reminders.db:/app/bot/reminders.db  # persist the DB file
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+
+volumes:
+  db-data:

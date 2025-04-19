@@ -9,6 +9,7 @@ import telebot.types as types
 
 bot = telebot.TeleBot(BOT_TOKEN)
 db = Database()
+db.init_db()
 rm = ReminderManager(db)
 
 @bot.message_handler(commands=['start'])
@@ -38,13 +39,12 @@ def handle_idle_choice(message):
     router[message.text](message)
 
 def check_reminder_time(message):
-    print(message.from_user.id)
     reminder = rm.get_reminder_by_id(message.from_user.id)
-    hour = reminder['hour']
-    sent_message = bot.send_message(message.chat.id, text=f"You wanted to be reminded at {hour}00 hrs!")
+    hour = str(reminder['hour'])
+    sent_message = bot.send_message(message.chat.id, text=f"You wanted to be reminded at {hour if len(hour) > 1 else '0'+hour}00 hrs!!")
     pass
 
-def change_reminder_time():
+def change_reminder_time(message):
     print("Placeholder for change reminder time")
     pass
 
@@ -66,7 +66,7 @@ def log_reminder_input(callback):
 
 def remind():
     now = datetime.now().hour
-    print(f"Sending reminders now at {now}00hrs...")
+    print(f"Sending reminders now at {str(now) if len(str(now)) > 1 else '0'+str(now)}00hrs...")
     all_users = rm.get_all_reminders()
     to_remind = [user for user in all_users if user['hour'] == now]
     for user in to_remind:
