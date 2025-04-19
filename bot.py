@@ -17,7 +17,6 @@ def start(message):
     chat = message.chat
     all_reminders = rm.get_all_reminders()
     all_reminders_id = [int(reminder["user_id"]) for reminder in all_reminders]
-    print(all_reminders)
     if from_user.id not in all_reminders_id:
         markup = quick_markup({
             f"{i}:00hrs" if len(str(i)) > 1 else f"0{i}:00hrs": {"callback_data": str(i)} for i in range(24)

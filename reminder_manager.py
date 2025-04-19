@@ -1,5 +1,4 @@
 from config import TABLE_NAME
-from database import Database
 
 class ReminderManager():
     def __init__(self, database):
