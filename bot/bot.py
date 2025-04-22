@@ -23,7 +23,7 @@ rm = ReminderManager(db)
 def start(message):
     from_user = message.from_user
     chat = message.chat
-    logger.info(f"/start called by user: {from_user.id}")
+    logger.info(f"/start called by user: {from_user.id} - {from_user.first_name}")
     all_reminders = rm.get_all_reminders()
     all_reminders_id = [int(reminder["user_id"]) for reminder in all_reminders]
     if from_user.id not in all_reminders_id:
@@ -90,7 +90,7 @@ def change_reminder_input(callback):
     to_edit_id = message.id
     to_edit_chat_id = message.chat.id
     bot.edit_message_reply_markup(chat_id=to_edit_chat_id, message_id=to_edit_id, reply_markup=markup)
-    logger.info(f"User {from_user.id} will now be reminded at hour {hour}.")
+    logger.info(f"User {from_user.id} - {from_user.first_name} will now be reminded at hour {hour}.")
 
     text = f"OK you now will be reminded daily at {hour if len(hour) > 1 else '0'+hour}00hrs!"
     sent_message = bot.send_message(chat_id, text=text)
@@ -116,7 +116,7 @@ def log_reminder_input(callback):
     to_edit_id = message.id
     to_edit_chat_id = message.chat.id
     bot.edit_message_reply_markup(chat_id=to_edit_chat_id, message_id=to_edit_id, reply_markup=markup)
-    logger.info(f"User {from_user.id} added to database at hour {hour}.")
+    logger.info(f"User {from_user.id} - {from_user.first_name} added to database at hour {hour}.")
 
     text = f"OK you will be reminded daily at {hour if len(hour) > 1 else '0'+hour}00hrs!"
     sent_message = bot.send_message(chat_id, text=text)
@@ -133,7 +133,7 @@ def remind():
         
 if __name__ == "__main__":
     scheduler = BackgroundScheduler()
-    scheduler.add_job(remind, "cron", hour="*")
+    scheduler.add_job(remind, "cron", hour="*", misfire_grace_time=300)
     scheduler.start()
     logger.info("Starting bot.")
     bot.infinity_polling()
