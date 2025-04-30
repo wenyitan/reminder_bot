@@ -170,6 +170,8 @@ def handle_pester_choice(callback):
     bot.edit_message_reply_markup(chat_id=to_edit_chat_id, message_id=to_edit_id, reply_markup=markup)
     if choice != "none":
         rm.set_pester_by_id(pester=choice, user_id=from_user.id)
+        if choice == "off":
+            rm.set_acknowledge_by_id(acknowledge=1, user_id=from_user)
     text = f"Ok! I will turn it {choice}!" if choice != "none" else "Ok. I won't do anything."
     if choice == "on":
         text = text + " You will now be pestered every 15 minutes until you tell me you've done your QT by using /acknowledge."
