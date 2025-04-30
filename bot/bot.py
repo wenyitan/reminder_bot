@@ -42,17 +42,19 @@ def start(message):
         markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
         markup.add("At what time did I want to be reminded?")
         markup.add("I want to change the time I am reminded.")
-        sent_message = bot.send_message(chat.id, text=f"Hello {from_user.first_name}! How can I help you? **This feature is still being built**", reply_markup=markup)
+        markup.add("Is my pester on?")
+        sent_message = bot.send_message(chat.id, text=f"Hello {from_user.first_name}! How can I help you?", reply_markup=markup)
         bot.register_next_step_handler(sent_message, handle_idle_choice)
         ## if the user is not new and has already a record, then show list of options to show what they can do - for now only change hour to be reminded.
 
 def handle_idle_choice(message):
     router = {
         "At what time did I want to be reminded?" : check_reminder_time,
-        "I want to change the time I am reminded." : change_reminder_time
+        "I want to change the time I am reminded." : change_reminder_time,
+        "Is my pester on?" : pester_mode
     }
-    if message.text.startswith("/"):
-        pass
+    if message.text.startswith("/") or message.text not in router.keys():
+        bot.send_message(chat_id=message.chat.id, text="Please /start again and choose from the options.", reply_markup=types.ReplyKeyboardRemove())
     else:
         router[message.text](message)
 
