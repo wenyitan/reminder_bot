@@ -23,6 +23,7 @@ bot.set_my_commands([
     types.BotCommand("/start", "To receive starting instructions"),
     types.BotCommand("/change", "To change the time you will be reminded"),
     types.BotCommand("/check", "To check the time you wanted to be reminded at"),
+    types.BotCommand("/pester", "To turn on pester mode [beta mode]"),
 ])
 
 @bot.message_handler(commands=['start'])
@@ -134,26 +135,64 @@ def remind():
     logger.info(f"Sending reminders now at {str(now) if len(str(now)) > 1 else '0'+str(now)}00hrs...")
     to_remind = rm.get_all_reminders_by_hour(now)
     for user in to_remind:
-        bot.send_message(user["chat_id"], text="Reminder to do your quiet time!!")
+        # bot.send_message(user["chat_id"], text="Reminder to do your quiet time!!")
         user_id = user["user_id"]
+        pester = user["pester"]
+        markup = types.ReplyKeyboardMarkup()
+        markup.add("/acknowledge")
+        bot.send_message(239169268, text="Reminder to do your quiet time!!", reply_markup=markup if pester == "on" else types.ReplyKeyboardRemove())
         logger.info(f"User {user_id} notified.")
+        pester = user["pester"]
+        if pester == "on":
+            rm.set_acknowledge_by_id(acknowledge=0, user_id=user_id)
 
 @bot.message_handler(commands=['pester'])
 def pester_mode(message):
-    text_off = "Your current pester mode is set to OFF. Do you want to turn it on?"
-    text_on = "Your current pester mode is set to ON. Do you want to turn it off?"
-    markup_off = quick_markup({
-        "yes": {"callback_data": f"pester:true"},
-        "no": {"callback_data": f"pester:none"},
+    user_id = message.from_user.id
+    pester = rm.get_pester_by_id(user_id)['pester']
+    text = f"Your current pester mode is set to {pester}. Do you want to turn it " + ("on" if pester == "off" else "off") + "?" 
+    markup = quick_markup({
+        "Yes!": {"callback_data": f"pester:{'on' if pester == 'off' else 'off'}"},
+        "No.": {"callback_data": "pester:none"},
     }, row_width=2)
-    markup_on = quick_markup({
-        "yes": {"callback_data": f"pester:false"},
-        "no": {"callback_data": f"pester:none"},
-    }, row_width=2)
+    bot.send_message(message.chat.id, text=text, reply_markup=markup)
         
+@bot.callback_query_handler(func=lambda call: call.data.split(":")[0] == "pester")
+def handle_pester_choice(callback):
+    message = callback.message
+    chat = message.chat
+    from_user = callback.from_user
+    choice = callback.data.split(":")[1]
+
+    markup = quick_markup({})
+    to_edit_id = message.id
+    to_edit_chat_id = message.chat.id
+    bot.edit_message_reply_markup(chat_id=to_edit_chat_id, message_id=to_edit_id, reply_markup=markup)
+    if choice != "none":
+        rm.set_pester_by_id(pester=choice, user_id=from_user.id)
+    text = f"Ok! I will turn it {choice}!" if choice != "none" else "Ok. I won't do anything."
+    if choice == "on":
+        text = text + " You will now be pestered every 15 minutes until you tell me you've done your QT by using /acknowledge."
+    bot.send_message(chat.id, text)
+
+def pester():
+    to_pester = rm.get_all_reminder_by_acknowledge()
+    markup=types.ReplyKeyboardMarkup()
+    markup.add("/acknowledge")
+    for person in to_pester:
+        bot.send_message(chat_id=person['chat_id'], text="Do your quiet time la.", reply_markup=markup)
+
+@bot.message_handler(commands=['acknowledge'])
+def acknowledge(message):
+    rm.set_acknowledge_by_id(message.from_user.id, 1)
+    markup=types.ReplyKeyboardRemove()
+    text="Good job! See you tomorrow!"
+    bot.send_message(message.chat.id, text, reply_markup=markup)
+
 if __name__ == "__main__":
     scheduler = BackgroundScheduler()
     scheduler.add_job(remind, "cron", hour="*", misfire_grace_time=300)
+    scheduler.add_job(pester, "cron", minute="*/15", misfire_grace_time=60)
     scheduler.start()
     logger.info("Starting bot.")
     bot.infinity_polling()
