@@ -19,6 +19,12 @@ db = Database()
 db.init_db()
 rm = ReminderManager(db)
 
+bot.set_my_commands([
+    types.BotCommand("/start", "To receive starting instructions"),
+    types.BotCommand("/change", "To change the time you will be reminded"),
+    types.BotCommand("/check", "To check the time you wanted to be reminded at"),
+])
+
 @bot.message_handler(commands=['start'])
 def start(message):
     from_user = message.from_user
@@ -49,6 +55,7 @@ def handle_idle_choice(message):
     else:
         router[message.text](message)
 
+@bot.message_handler(commands=['check'])
 def check_reminder_time(message):
     reminder = rm.get_reminder_by_id(message.from_user.id)
     hour = str(reminder['hour'])
@@ -130,6 +137,19 @@ def remind():
         bot.send_message(user["chat_id"], text="Reminder to do your quiet time!!")
         user_id = user["user_id"]
         logger.info(f"User {user_id} notified.")
+
+@bot.message_handler(commands=['pester'])
+def pester_mode(message):
+    text_off = "Your current pester mode is set to OFF. Do you want to turn it on?"
+    text_on = "Your current pester mode is set to ON. Do you want to turn it off?"
+    markup_off = quick_markup({
+        "yes": {"callback_data": f"pester:true"},
+        "no": {"callback_data": f"pester:none"},
+    }, row_width=2)
+    markup_on = quick_markup({
+        "yes": {"callback_data": f"pester:false"},
+        "no": {"callback_data": f"pester:none"},
+    }, row_width=2)
         
 if __name__ == "__main__":
     scheduler = BackgroundScheduler()
