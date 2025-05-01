@@ -137,12 +137,11 @@ def remind():
     logger.info(f"Sending reminders now at {str(now) if len(str(now)) > 1 else '0'+str(now)}00hrs...")
     to_remind = rm.get_all_reminders_by_hour(now)
     for user in to_remind:
-        # bot.send_message(user["chat_id"], text="Reminder to do your quiet time!!")
         user_id = user["user_id"]
         pester = user["pester"]
         markup = types.ReplyKeyboardMarkup()
         markup.add("/acknowledge")
-        bot.send_message(239169268, text="Reminder to do your quiet time!!", reply_markup=markup if pester == "on" else types.ReplyKeyboardRemove())
+        bot.send_message(user["chat_id"], text="Reminder to do your quiet time!!", reply_markup=markup if pester == "on" else types.ReplyKeyboardRemove())
         logger.info(f"User {user_id} notified.")
         pester = user["pester"]
         if pester == "on":
