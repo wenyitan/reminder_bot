@@ -1,8 +1,8 @@
 import telebot
-from config import BOT_TOKEN
+from bot.config import BOT_TOKEN
 from apscheduler.schedulers.background import BackgroundScheduler
-from database import Database
-from reminder_manager import ReminderManager
+from bot.database import Database
+from bot.reminder_manager import ReminderManager
 from telebot.util import quick_markup
 from datetime import datetime 
 import telebot.types as types
@@ -15,9 +15,7 @@ logger.basicConfig(
 )
 
 bot = telebot.TeleBot(BOT_TOKEN)
-db = Database()
-db.init_db()
-rm = ReminderManager(db)
+rm = ReminderManager()
 
 bot.set_my_commands([
     types.BotCommand("/start", "To receive starting instructions"),
@@ -141,19 +139,19 @@ def remind():
         pester = user["pester"]
         markup = types.ReplyKeyboardMarkup()
         markup.add("/acknowledge")
-        bot.send_message(user["chat_id"], text="Reminder to do your quiet time!!", reply_markup=markup if pester == "on" else types.ReplyKeyboardRemove())
+        bot.send_message(user["chat_id"], text="Reminder to do your quiet time!!", reply_markup=markup if pester else types.ReplyKeyboardRemove())
         logger.info(f"User {user_id} notified.")
         pester = user["pester"]
-        if pester == "on":
-            rm.set_acknowledge_by_id(acknowledge=0, user_id=user_id)
+        if pester:
+            rm.set_acknowledge_by_id(acknowledge=False, user_id=user_id)
 
 @bot.message_handler(commands=['pester'])
 def pester_mode(message):
     user_id = message.from_user.id
     pester = rm.get_pester_by_id(user_id)['pester']
-    text = f"Your current pester mode is set to {pester}. Do you want to turn it " + ("on" if pester == "off" else "off") + "?" 
+    text = f"Your current pester mode is set to {'on' if pester else 'off'}. Do you want to turn it " + ("on" if not pester else "off") + "?" 
     markup = quick_markup({
-        "Yes!": {"callback_data": f"pester:{'on' if pester == 'off' else 'off'}"},
+        "Yes!": {"callback_data": f"pester:{'on' if not pester else 'off'}"},
         "No.": {"callback_data": "pester:none"},
     }, row_width=2)
     bot.send_message(message.chat.id, text=text, reply_markup=markup)
@@ -170,9 +168,9 @@ def handle_pester_choice(callback):
     to_edit_chat_id = message.chat.id
     bot.edit_message_reply_markup(chat_id=to_edit_chat_id, message_id=to_edit_id, reply_markup=markup)
     if choice != "none":
-        rm.set_pester_by_id(pester=choice, user_id=from_user.id)
-        if choice == "off":
-            rm.set_acknowledge_by_id(acknowledge=1, user_id=from_user.id)
+        rm.set_pester_by_id(pester=choice == "on" , user_id=from_user.id)
+        if not choice:
+            rm.set_acknowledge_by_id(acknowledge=True, user_id=from_user.id)
     text = f"Ok! I will turn it {choice}!" if choice != "none" else "Ok. I won't do anything."
     if choice == "on":
         text = text + " You will now be pestered every 15 minutes until you tell me you've done your QT by using /acknowledge."
@@ -189,7 +187,7 @@ def pester():
 
 @bot.message_handler(commands=['acknowledge'])
 def acknowledge(message):
-    rm.set_acknowledge_by_id(message.from_user.id, 1)
+    rm.set_acknowledge_by_id(message.from_user.id, True)
     markup=types.ReplyKeyboardRemove()
     text="Good job! See you tomorrow!"
     bot.send_message(message.chat.id, text, reply_markup=markup)

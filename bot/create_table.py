@@ -1,5 +1,5 @@
-from database import Database
-from config import TABLE_NAME
+from bot.database import Database
+from bot.config import TABLE_NAME
 db = Database()
 
 

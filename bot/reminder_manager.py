@@ -1,45 +1,53 @@
-from config import TABLE_NAME
+from bot.config import TABLE_NAME
+from bot.database import Database
 
 class ReminderManager():
-    def __init__(self, database):
-        self.db = database
+    def __init__(self):
+        self.db = Database()
 
     def get_all_reminders(self):
-        query = f"select * from {TABLE_NAME}"
-        return self.db.fetch_all(query)
+        results = self.db.collection.find({})
+        return list(results)
     
     def get_all_reminders_by_hour(self, hour):
-        query = f"select * from {TABLE_NAME} where hour=?"
-        return self.db.fetch_all(query, (hour,))
+        results = self.db.collection.find({"hour": hour})
+        return list(results)
     
     def add_reminder(self, chat_id, user_id, hour):
-        query = f"insert into {TABLE_NAME} (chat_id, user_id, hour) values (?, ?, ?)"
-        self.db.execute(query, (chat_id, user_id, hour))
+        self.db.collection.insert_one({
+            "chat_id": chat_id,
+            "user_id": user_id,
+            "hour": hour,
+            "pester": False,
+            "acknowledge": True
+        })
         
     def get_reminder_by_id(self, user_id):
-        query = f"select * from {TABLE_NAME} where user_id=?"
-        return self.db.fetch_one(query, (str(user_id),))
+        result = self.db.collection.find_one({"user_id": user_id})
+        return result
     
     def change_reminder_hour_for_user(self, user_id, hour):
-        query = f"update {TABLE_NAME} set hour=? where user_id=?"
-        self.db.execute(query, (hour, user_id))
+        result = self.db.collection.update_one({"user_id": user_id}, {"$set": {"hour": hour}})
+        return result.modified_count
 
     def get_pester_by_id(self, user_id):
-        query = f"select pester from {TABLE_NAME} where user_id=?"
-        return self.db.fetch_one(query, (str(user_id),))
+        return self.db.collection.find_one({"user_id": user_id}, projection={"pester": 1})
+        # query = f"select pester from {TABLE_NAME} where user_id=?"
+        # return self.db.fetch_one(query, (str(user_id),))
 
     def set_pester_by_id(self, user_id, pester):
-        query = f"update {TABLE_NAME} set pester=? where user_id=?"
-        self.db.execute(query, (pester, user_id))
+        result = self.db.collection.update_one({"user_id": user_id}, {"$set": {"pester": pester}})
+        return result.modified_count
 
     def set_acknowledge_by_id(self, user_id, acknowledge):
-        query = f"update {TABLE_NAME} set acknowledge=? where user_id=?"
-        self.db.execute(query, (acknowledge, user_id))
+        result = self.db.collection.update_one({"user_id": user_id}, {"$set": {"acknowledge": acknowledge}})
+        return result.modified_count
 
     def get_acknowledge_by_id(self, user_id):
-        query = f"select acknowledge from {TABLE_NAME} where user_id=?"
-        return self.db.fetch_one(query, (str(user_id),))
+        return self.db.collection.find_one({"user_id": user_id}, projection={"acknowledge": 1})
+        # query = f"select acknowledge from {TABLE_NAME} where user_id=?"
+        # return self.db.fetch_one(query, (str(user_id),))
 
     def get_all_reminder_by_acknowledge(self):
-        query = f"select * from {TABLE_NAME} where acknowledge=? and pester=?"
-        return self.db.fetch_all(query, (0, "on"))
+        results = self.db.collection.find({"acknowledge": False, "pester": True})
+        return list(results)
