@@ -1,5 +1,5 @@
 import sqlite3
-from bot.config import TABLE_NAME, MONGO_URI, MONGO_DB, env
+from bot.config import MONGO_URI, MONGO_DB, env
 from pymongo import MongoClient
 
 class Database:
