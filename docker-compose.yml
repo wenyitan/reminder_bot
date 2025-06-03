@@ -3,7 +3,6 @@ services:
     build: .
     volumes:
       - ./bot:/app/bot
-      - ./bot/reminders.db:/app/bot/reminders.db  # persist the DB file
       - ./bot/bot.log:/app/bot/bot.log            # persist log file
     environment:
       - PYTHONUNBUFFERED=1
@@ -18,7 +17,6 @@ services:
     build: .
     volumes:
       - ./bot:/app/bot
-      - ./bot/reminders.db:/app/bot/reminders.db  # persist the DB file
       - ./bot/bot.log:/app/bot/bot.log            # persist log file
     environment:
       - PYTHONUNBUFFERED=1
