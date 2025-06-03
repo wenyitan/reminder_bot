@@ -41,5 +41,5 @@ class ReminderManager():
         return self.db.fetch_one(query, (str(user_id),))
 
     def get_all_reminder_by_acknowledge(self):
-        query = f"select * from {TABLE_NAME} where acknowledge=0"
-        return self.db.fetch_all(query)
+        query = f"select * from {TABLE_NAME} where acknowledge=? and pester=?"
+        return self.db.fetch_all(query, (0, "on"))

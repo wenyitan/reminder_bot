@@ -183,7 +183,9 @@ def pester():
     markup=types.ReplyKeyboardMarkup()
     markup.add("/acknowledge")
     for person in to_pester:
+        user_id = person['user_id']
         bot.send_message(chat_id=person['chat_id'], text="Do your quiet time la.", reply_markup=markup)
+        logger.info(f"User {user_id} notified.")
 
 @bot.message_handler(commands=['acknowledge'])
 def acknowledge(message):
