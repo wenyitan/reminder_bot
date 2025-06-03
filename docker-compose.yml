@@ -1,6 +1,8 @@
 services:
-  telegram-bot:
+  reminder-bot-prod:
     build: .
+    container_name: reminder_bot_prod
+    image: reminder_bot:bot-prod
     volumes:
       - ./bot:/app/bot
       - ./bot/bot.log:/app/bot/bot.log            # persist log file
@@ -13,8 +15,10 @@ services:
       - wen-network
     restart: unless-stopped
 
-  telegram-bot-dev:
+  reminder-bot-dev:
     build: .
+    image: reminder_bot:bot-dev
+    container_name: reminder_bot_dev
     volumes:
       - ./bot:/app/bot
       - ./bot/bot.log:/app/bot/bot.log            # persist log file

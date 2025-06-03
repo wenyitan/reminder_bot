@@ -1,6 +1,7 @@
 #!/bin/bash
+ENVIRONMENT=${1:-prod}
 
-CONTAINER_NAME="reminder_bot"
+CONTAINER_NAME="reminder_bot_$ENVIRONMENT"
 
 # Helper function to get the container ID
 get_container_id() {
@@ -38,5 +39,5 @@ if docker ps --filter "name=$CONTAINER_NAME" --filter "status=running" | grep "$
 else
     echo "🚀 Container '$CONTAINER_NAME' is not running. Starting it..."
     cd $HOME/apps/reminder_bot
-    docker compose up -d
+    docker compose up reminder-bot-$ENVIRONMENT -d
 fi
