@@ -1,5 +1,5 @@
 import telebot
-from bot.config import BOT_TOKEN
+from bot.config import BOT_TOKEN, env
 from apscheduler.schedulers.background import BackgroundScheduler
 from bot.database import Database
 from bot.reminder_manager import ReminderManager
@@ -11,7 +11,7 @@ import logging as logger
 logger.basicConfig(
     filename='/app/bot/bot.log',
     level=logger.INFO,
-    format='%(asctime)s [%(levelname)s] %(message)s'
+    format=f'%(asctime)s [%(levelname)s] [{env}] %(message)s'
 )
 
 bot = telebot.TeleBot(BOT_TOKEN)
@@ -169,7 +169,7 @@ def handle_pester_choice(callback):
     bot.edit_message_reply_markup(chat_id=to_edit_chat_id, message_id=to_edit_id, reply_markup=markup)
     if choice != "none":
         rm.set_pester_by_id(pester=choice == "on" , user_id=from_user.id)
-        if not choice:
+        if choice == "off":
             rm.set_acknowledge_by_id(acknowledge=True, user_id=from_user.id)
     text = f"Ok! I will turn it {choice}!" if choice != "none" else "Ok. I won't do anything."
     if choice == "on":
